@@ -14,8 +14,9 @@ export function ReservationStatusPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const [date, setDate] = useState(formatDate(new Date()));
 
+  const [date, setDate] = useState(formatDate(new Date()));
+  const [activeReservation, setActiveReservation] = useState<string | null>(null);
   const locationState = location.state as { message?: string } | null;
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
     locationState?.message ? { type: 'success', text: locationState.message } : null
@@ -27,8 +28,6 @@ export function ReservationStatusPage() {
     }
   }, [locationState]);
 
-  const { data: myReservationList = [] } = useQuery(['myReservations'], getMyReservations);
-
   const cancelMutation = useMutation((id: string) => cancelReservation(id), {
     onSuccess: () => {
       queryClient.invalidateQueries(['reservations']);
@@ -36,17 +35,7 @@ export function ReservationStatusPage() {
     },
   });
 
-  const handleCancel = async (id: string) => {
-    try {
-      await cancelMutation.mutateAsync(id);
-      setMessage({ type: 'success', text: '예약이 취소되었습니다.' });
-    } catch {
-      setMessage({ type: 'error', text: '취소에 실패했습니다.' });
-    }
-  };
-
-  const [activeReservation, setActiveReservation] = useState<string | null>(null);
-
+  const { data: myReservationList = [] } = useQuery(['myReservations'], getMyReservations);
   const { data: rooms = [] } = useQuery(['rooms'], getRooms);
   const { data: reservations = [] } = useQuery(['reservations', date], () => getReservations(date), { enabled: !!date });
 
@@ -168,7 +157,12 @@ export function ReservationStatusPage() {
                     onClick={(e) => {
                       e.stopPropagation();
                       if (window.confirm('정말 취소하시겠습니까?')) {
-                        handleCancel(reservation.id);
+                        try {
+                          cancelMutation.mutateAsync(reservation.id);
+                          setMessage({ type: 'success', text: '예약이 취소되었습니다.' });
+                        } catch {
+                          setMessage({ type: 'error', text: '취소에 실패했습니다.' });
+                        }
                       }
                     }}
                   >
