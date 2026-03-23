@@ -320,7 +320,7 @@ export function RoomBookingPage() {
               {availableRooms.map((room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }) => {
                 const isSelected = selectedRoomId === room.id;
                 return (
-                  <MeeringRoomCard room={room} isSelected={isSelected} setSelectedRoomId={setSelectedRoomId} />
+                  <MeetingRoomCard room={room} isSelected={isSelected} setSelectedRoomId={setSelectedRoomId} />
                 );
               })}
             </div>
@@ -363,7 +363,7 @@ function ValidationError({ validationError }: { validationError: string }) {
   );
 }
 
-function MeeringRoomCard({ room, isSelected, setSelectedRoomId }: { room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }, isSelected: boolean, setSelectedRoomId: (id: string) => void }) {
+function MeetingRoomCard({ room, isSelected, setSelectedRoomId }: { room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }, isSelected: boolean, setSelectedRoomId: (id: string) => void }) {
   return (
     <div
       key={room.id}
