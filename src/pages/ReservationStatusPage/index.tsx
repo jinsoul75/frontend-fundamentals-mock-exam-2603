@@ -5,38 +5,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text, ListRow } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getRooms, getReservations, getMyReservations, cancelReservation } from 'pages/remotes';
-
-const EQUIPMENT_LABELS: Record<string, string> = {
-  tv: 'TV',
-  whiteboard: '화이트보드',
-  video: '화상장비',
-  speaker: '스피커',
-};
-
-const TIME_SLOTS: string[] = [];
-for (let h = 9; h <= 20; h++) {
-  TIME_SLOTS.push(`${String(h).padStart(2, '0')}:00`);
-  if (h < 20) {
-    TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`);
-  }
-}
-
-const HOUR_LABELS = TIME_SLOTS.filter(t => t.endsWith(':00'));
-const TIMELINE_START = 9;
-const TIMELINE_END = 20;
-const TOTAL_MINUTES = (TIMELINE_END - TIMELINE_START) * 60;
-
-function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  return (h - TIMELINE_START) * 60 + m;
-}
+import { EQUIPMENT_LABELS } from 'constants/equipment';
+import { HOUR_LABELS, TOTAL_MINUTES } from 'constants/timeSlots';
+import { formatDate } from 'utils/date';
+import { timeToMinutes } from 'utils/time';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();
@@ -93,7 +65,7 @@ export function ReservationStatusPage() {
           날짜 선택
         </Text>
         <Spacing size={16} />
-        <DatePicker date={date} setDate={setDate} />
+        <DatePicker value={date} onChange={setDate} />
       </div>
 
       <Spacing size={24} />
@@ -151,14 +123,14 @@ export function ReservationStatusPage() {
   );
 }
 
-function DatePicker({ date, setDate }: { date: string, setDate: (date: string) => void }) {
+function DatePicker({ value, onChange }: { value: string, onChange: (date: string) => void }) {
   return (
     <div css={css`display: flex; flex-direction: column; gap: 6px;`}>
       <input
         type="date"
-        value={date}
+        value={value}
         min={formatDate(new Date())}
-        onChange={e => setDate(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         aria-label="날짜"
         css={css`
         box-sizing: border-box; font-size: 16px; font-weight: 500; line-height: 1.5; height: 48px;
