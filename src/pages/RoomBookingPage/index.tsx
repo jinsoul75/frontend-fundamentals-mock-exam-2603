@@ -98,21 +98,21 @@ export function RoomBookingPage() {
 
   const availableRooms = isFilterComplete
     ? rooms
-        .filter((room: { id: string; capacity: number; equipment: string[]; floor: number }) => {
-          if (room.capacity < attendees) return false;
-          if (!equipment.every(eq => room.equipment.includes(eq))) return false;
-          if (preferredFloor !== null && room.floor !== preferredFloor) return false;
-          const hasConflict = reservations.some(
-            (r: { roomId: string; date: string; start: string; end: string }) =>
-              r.roomId === room.id && r.date === date && r.start < endTime && r.end > startTime
-          );
-          if (hasConflict) return false;
-          return true;
-        })
-        .sort((a: { floor: number; name: string }, b: { floor: number; name: string }) => {
-          if (a.floor !== b.floor) return a.floor - b.floor;
-          return a.name.localeCompare(b.name);
-        })
+      .filter((room: { id: string; capacity: number; equipment: string[]; floor: number }) => {
+        if (room.capacity < attendees) return false;
+        if (!equipment.every(eq => room.equipment.includes(eq))) return false;
+        if (preferredFloor !== null && room.floor !== preferredFloor) return false;
+        const hasConflict = reservations.some(
+          (r: { roomId: string; date: string; start: string; end: string }) =>
+            r.roomId === room.id && r.date === date && r.start < endTime && r.end > startTime
+        );
+        if (hasConflict) return false;
+        return true;
+      })
+      .sort((a: { floor: number; name: string }, b: { floor: number; name: string }) => {
+        if (a.floor !== b.floor) return a.floor - b.floor;
+        return a.name.localeCompare(b.name);
+      })
     : [];
 
   const handleBook = async () => {
@@ -174,17 +174,7 @@ export function RoomBookingPage() {
       </Top.Top03>
 
       {errorMessage && (
-        <div css={css`padding: 0 24px;`}>
-          <Spacing size={12} />
-          <div
-            css={css`
-              padding: 10px 14px; border-radius: 10px; background: ${colors.red50};
-              display: flex; align-items: center; gap: 8px;
-            `}
-          >
-            <Text typography="t7" fontWeight="medium" color={colors.red500}>{errorMessage}</Text>
-          </div>
-        </div>
+        <ErrorMessage errorMessage={errorMessage} />
       )}
 
       <Spacing size={24} />
@@ -320,10 +310,7 @@ export function RoomBookingPage() {
       </div>
 
       {validationError && (
-        <div css={css`padding: 0 24px;`}>
-          <Spacing size={8} />
-          <span css={css`color: ${colors.red500}; font-size: 14px;`} role="alert">{validationError}</span>
-        </div>
+        <ValidationError validationError={validationError} />
       )}
 
       <Spacing size={24} />
@@ -354,36 +341,7 @@ export function RoomBookingPage() {
               {availableRooms.map((room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }) => {
                 const isSelected = selectedRoomId === room.id;
                 return (
-                  <div
-                    key={room.id}
-                    onClick={() => setSelectedRoomId(room.id)}
-                    role="button"
-                    aria-pressed={isSelected}
-                    aria-label={room.name}
-                    css={css`
-                      cursor: pointer; padding: 14px 16px; border-radius: 14px;
-                      border: 2px solid ${isSelected ? colors.blue500 : colors.grey200};
-                      background: ${isSelected ? colors.blue50 : colors.white};
-                      transition: all 0.15s;
-                      &:hover { border-color: ${isSelected ? colors.blue500 : colors.grey300}; }
-                    `}
-                  >
-                    <ListRow
-                      contents={
-                        <ListRow.Text2Rows
-                          top={room.name}
-                          topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
-                          bottom={`${room.floor}층 · ${room.capacity}명 · ${room.equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ')}`}
-                          bottomProps={{ typography: 't7', color: colors.grey600 }}
-                        />
-                      }
-                      right={
-                        isSelected ? (
-                          <Text typography="t7" fontWeight="bold" color={colors.blue500}>선택됨</Text>
-                        ) : undefined
-                      }
-                    />
-                  </div>
+                  <MeeringRoomCard room={room} isSelected={isSelected} setSelectedRoomId={setSelectedRoomId} />
                 );
               })}
             </div>
@@ -397,6 +355,66 @@ export function RoomBookingPage() {
       )}
 
       <Spacing size={24} />
+    </div>
+  );
+}
+
+function ErrorMessage({ errorMessage }: { errorMessage: string }) {
+  return (
+    <div css={css`padding: 0 24px;`}>
+      <Spacing size={12} />
+      <div
+        css={css`
+        padding: 10px 14px; border-radius: 10px; background: ${colors.red50};
+        display: flex; align-items: center; gap: 8px;
+      `}
+      >
+        <Text typography="t7" fontWeight="medium" color={colors.red500}>{errorMessage}</Text>
+      </div>
+    </div>
+  );
+}
+
+function ValidationError({ validationError }: { validationError: string }) {
+  return (
+    <div css={css`padding: 0 24px;`}>
+      <Spacing size={8} />
+      <span css={css`color: ${colors.red500}; font-size: 14px;`} role="alert">{validationError}</span>
+    </div>
+  );
+}
+
+function MeeringRoomCard({ room, isSelected, setSelectedRoomId }: { room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }, isSelected: boolean, setSelectedRoomId: (id: string) => void }) {
+  return (
+    <div
+      key={room.id}
+      onClick={() => setSelectedRoomId(room.id)}
+      role="button"
+      aria-pressed={isSelected}
+      aria-label={room.name}
+      css={css`
+      cursor: pointer; padding: 14px 16px; border-radius: 14px;
+      border: 2px solid ${isSelected ? colors.blue500 : colors.grey200};
+      background: ${isSelected ? colors.blue50 : colors.white};
+      transition: all 0.15s;
+      &:hover { border-color: ${isSelected ? colors.blue500 : colors.grey300}; }
+    `}
+    >
+      <ListRow
+        contents={
+          <ListRow.Text2Rows
+            top={room.name}
+            topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
+            bottom={`${room.floor}층 · ${room.capacity}명 · ${room.equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ')}`}
+            bottomProps={{ typography: 't7', color: colors.grey600 }}
+          />
+        }
+        right={
+          isSelected ? (
+            <Text typography="t7" fontWeight="bold" color={colors.blue500}>선택됨</Text>
+          ) : undefined
+        }
+      />
     </div>
   );
 }
