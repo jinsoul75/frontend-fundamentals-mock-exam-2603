@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { css } from "@emotion/react";
 import { Button } from "_tosslib/components";
 
-export function ReservationButtonSection() {
+export function GoToBookingButtonSection() {
     const navigate = useNavigate();
 
     return (

@@ -4,9 +4,9 @@ import { Top, Spacing, Border } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getTodayDateString } from 'utils/date';
 import { DateSelectSection } from './components/DateSelectSection';
-import { ReservationStateSection } from './components/ReservationStateSection';
 import { MyReservationSection } from './components/MyReservationSection';
-import { ReservationButtonSection } from './components/ReservationButtonSection';
+import { GoToBookingButtonSection } from './components/GoToBookingButtonSection';
+import { ReservationStateSection } from './components/ReservationStateSection';
 
 export function ReservationStatusPage() {
   const [date, setDate] = useState(getTodayDateString());
@@ -41,7 +41,7 @@ export function ReservationStatusPage() {
       <Spacing size={24} />
 
       {/* 예약하기 버튼 */}
-      <ReservationButtonSection />
+      <GoToBookingButtonSection />
       <Spacing size={24} />
     </div>
   );
