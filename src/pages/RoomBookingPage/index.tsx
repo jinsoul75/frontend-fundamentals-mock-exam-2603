@@ -1,6 +1,6 @@
 import { css } from '@emotion/react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text, Select, ListRow } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
@@ -10,25 +10,36 @@ import { EQUIPMENT_LABELS, ALL_EQUIPMENT } from 'constants/equipment';
 import { TIME_SLOTS } from 'constants/timeSlots';
 import { formatDate } from 'utils/date';
 import { useBookingSearchParams } from 'hooks/useBookingSearchParams';
+import { ErrorMessage } from './components/ErrorMessage';
+import { MeetingRoomCard } from './components/MeetingRoomCard';
+import { ValidationError } from './components/ValidationError';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const {
-    date,
-    setDate,
-    startTime,
-    setStartTime,
-    endTime,
-    setEndTime,
-    attendees,
-    setAttendees,
-    equipment,
-    setEquipment,
-    preferredFloor,
-    setPreferredFloor,
-  } = useBookingSearchParams();
+  const [date, setDate] = useState(searchParams.get('date') || formatDate(new Date()));
+  const [startTime, setStartTime] = useState(searchParams.get('startTime') || '');
+  const [endTime, setEndTime] = useState(searchParams.get('endTime') || '');
+  const [attendees, setAttendees] = useState(Number(searchParams.get('attendees')) || 1);
+  const [equipment, setEquipment] = useState<string[]>(
+    searchParams.get('equipment') ? searchParams.get('equipment')!.split(',').filter(Boolean) : []
+  );
+  const [preferredFloor, setPreferredFloor] = useState<number | null>(
+    searchParams.get('floor') ? Number(searchParams.get('floor')) : null
+  );
+
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (date) params.date = date;
+    if (startTime) params.startTime = startTime;
+    if (endTime) params.endTime = endTime;
+    if (attendees > 1) params.attendees = String(attendees);
+    if (equipment.length > 0) params.equipment = equipment.join(',');
+    if (preferredFloor !== null) params.floor = String(preferredFloor);
+    setSearchParams(params, { replace: true });
+  }, [date, startTime, endTime, attendees, equipment, preferredFloor, setSearchParams]);
 
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,8 +52,8 @@ export function RoomBookingPage() {
       createReservation(data),
     {
       onSuccess: (_data, variables) => {
-        queryClient.invalidateQueries(['reservations', variables.date]);
-        queryClient.invalidateQueries(['myReservations']);
+        queryClient.invalidateQueries({ queryKey: ['reservations', variables.date] });
+        queryClient.invalidateQueries({ queryKey: ['myReservations'] });
       },
     }
   );
@@ -161,8 +172,19 @@ export function RoomBookingPage() {
         {/* 날짜 */}
         <div css={css`display: flex; flex-direction: column; gap: 6px;`}>
           <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>날짜</Text>
-          <DateInput date={date} onChange={v => { setDate(v); handleFilterChange(); }} />
-        </div>
+          <input
+            type="date"
+            value={date}
+            min={formatDate(new Date())}
+            onChange={e => setDate(e.target.value)}
+            aria-label="날짜"
+            css={css`
+      box-sizing: border-box; font-size: 16px; font-weight: 500; line-height: 1.5; height: 48px;
+      background-color: ${colors.grey50}; border-radius: 12px; color: ${colors.grey800};
+      width: 100%; border: 1px solid ${colors.grey200}; padding: 0 16px; outline: none;
+      transition: border-color 0.15s; &:focus { border-color: ${colors.blue500}; }
+    `}
+          />        </div>
         <Spacing size={14} />
 
         {/* 시간 */}
@@ -200,8 +222,19 @@ export function RoomBookingPage() {
         <div css={css`display: flex; gap: 12px;`}>
           <div css={css`display: flex; flex-direction: column; gap: 6px; flex: 1;`}>
             <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>참석 인원</Text>
-            <NumberInput value={attendees} onChange={v => { setAttendees(v); handleFilterChange(); }} />
-          </div>
+            <input
+              type="number"
+              min={1}
+              value={attendees}
+              onChange={e => setAttendees(Math.max(1, Number(e.target.value)))}
+              aria-label="참석 인원"
+              css={css`
+      box-sizing: border-box; font-size: 16px; font-weight: 500; line-height: 1.5; height: 48px;
+      background-color: ${colors.grey50}; border-radius: 12px; color: ${colors.grey800};
+      width: 100%; border: 1px solid ${colors.grey200}; padding: 0 16px; outline: none;
+      transition: border-color 0.15s; &:focus { border-color: ${colors.blue500}; }
+    `}
+            />          </div>
           <div css={css`display: flex; flex-direction: column; gap: 6px; flex: 1;`}>
             <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>선호 층</Text>
             <Select
@@ -289,116 +322,20 @@ export function RoomBookingPage() {
               {availableRooms.map((room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }) => {
                 const isSelected = selectedRoomId === room.id;
                 return (
-                  <MeetingRoomCard room={room} isSelected={isSelected} setSelectedRoomId={setSelectedRoomId} />
+                  <MeetingRoomCard key={room.id} room={room} isSelected={isSelected} setSelectedRoomId={setSelectedRoomId} />
                 );
               })}
             </div>
           )}
 
           <Spacing size={16} />
-          <Button display="full" onClick={handleBook} disabled={createMutation.isLoading}>
-            {createMutation.isLoading ? '예약 중...' : '확정'}
+          <Button display="full" onClick={handleBook} disabled={createMutation.isPending}>
+            {createMutation.isPending ? '예약 중...' : '확정'}
           </Button>
         </div>
       )}
 
       <Spacing size={24} />
     </div>
-  );
-}
-
-function ErrorMessage({ errorMessage }: { errorMessage: string }) {
-  return (
-    <div css={css`padding: 0 24px;`}>
-      <Spacing size={12} />
-      <div
-        css={css`
-        padding: 10px 14px; border-radius: 10px; background: ${colors.red50};
-        display: flex; align-items: center; gap: 8px;
-      `}
-      >
-        <Text typography="t7" fontWeight="medium" color={colors.red500}>{errorMessage}</Text>
-      </div>
-    </div>
-  );
-}
-
-function ValidationError({ validationError }: { validationError: string }) {
-  return (
-    <div css={css`padding: 0 24px;`}>
-      <Spacing size={8} />
-      <span css={css`color: ${colors.red500}; font-size: 14px;`} role="alert">{validationError}</span>
-    </div>
-  );
-}
-
-function MeetingRoomCard({ room, isSelected, setSelectedRoomId }: { room: { id: string; name: string; floor: number; capacity: number; equipment: string[] }, isSelected: boolean, setSelectedRoomId: (id: string) => void }) {
-  return (
-    <div
-      key={room.id}
-      onClick={() => setSelectedRoomId(room.id)}
-      role="button"
-      aria-pressed={isSelected}
-      aria-label={room.name}
-      css={css`
-      cursor: pointer; padding: 14px 16px; border-radius: 14px;
-      border: 2px solid ${isSelected ? colors.blue500 : colors.grey200};
-      background: ${isSelected ? colors.blue50 : colors.white};
-      transition: all 0.15s;
-      &:hover { border-color: ${isSelected ? colors.blue500 : colors.grey300}; }
-    `}
-    >
-      <ListRow
-        contents={
-          <ListRow.Text2Rows
-            top={room.name}
-            topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
-            bottom={`${room.floor}층 · ${room.capacity}명 · ${room.equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ')}`}
-            bottomProps={{ typography: 't7', color: colors.grey600 }}
-          />
-        }
-        right={
-          isSelected ? (
-            <Text typography="t7" fontWeight="bold" color={colors.blue500}>선택됨</Text>
-          ) : undefined
-        }
-      />
-    </div>
-  );
-}
-
-function DateInput({ date, onChange }: { date: string, onChange: (date: string) => void }) {
-  return (
-    <input
-      type="date"
-      value={date}
-      min={formatDate(new Date())}
-      onChange={e => onChange(e.target.value)}
-      aria-label="날짜"
-      css={css`
-      box-sizing: border-box; font-size: 16px; font-weight: 500; line-height: 1.5; height: 48px;
-      background-color: ${colors.grey50}; border-radius: 12px; color: ${colors.grey800};
-      width: 100%; border: 1px solid ${colors.grey200}; padding: 0 16px; outline: none;
-      transition: border-color 0.15s; &:focus { border-color: ${colors.blue500}; }
-    `}
-    />
-  );
-}
-
-function NumberInput({ value, onChange }: { value: number, onChange: (value: number) => void }) {
-  return (
-    <input
-      type="number"
-      min={1}
-      value={value}
-      onChange={e => onChange(Math.max(1, Number(e.target.value)))}
-      aria-label="참석 인원"
-      css={css`
-      box-sizing: border-box; font-size: 16px; font-weight: 500; line-height: 1.5; height: 48px;
-      background-color: ${colors.grey50}; border-radius: 12px; color: ${colors.grey800};
-      width: 100%; border: 1px solid ${colors.grey200}; padding: 0 16px; outline: none;
-      transition: border-color 0.15s; &:focus { border-color: ${colors.blue500}; }
-    `}
-    />
   );
 }
