@@ -49,7 +49,7 @@ export function MyReservationSection({ setMessage }: { setMessage: (message: { t
   }
   
   function MyReservationCard({ reservation, onCancel }: { reservation: { id: string; roomId: string; date: string; start: string; end: string; attendees: number; equipment: string[] }, onCancel: (reservationId: string) => void }) {
-    const { data: rooms = [] } = useQuery(['rooms'], getRooms);
+    const { data: rooms = [] } = useQuery({ queryKey: ['rooms'], queryFn: getRooms });
   
     const getRoomName = (roomId: string) => rooms.find((r: { id: string; name: string }) => r.id === roomId)?.name ?? roomId;
   
