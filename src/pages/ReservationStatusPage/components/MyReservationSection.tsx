@@ -1,38 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { getMyReservations, getRooms } from "pages/remotes";
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { useCancelWithConfirm } from "hooks/useCancelWithConfirm";
+import { useCancelReservation } from "hooks/useCancelReservation";
 import { css } from "@emotion/react";
 import { colors } from "_tosslib/constants/colors";
 import { Button, ListRow, Spacing, Text } from "_tosslib/components";
 import { EQUIPMENT_LABELS } from "constants/equipment";
 
-export function MyReservationSection() {
+export function MyReservationSection({ setMessage }: { setMessage: (message: { type: 'success' | 'error'; text: string } | null) => void }) {
     const { data: myReservationList = [] } = useQuery({ queryKey: ['myReservations'], queryFn: getMyReservations });
   
-    const location = useLocation();
-    const locationState = location.state as { message?: string } | null;
-  
-    useEffect(() => {
-      if (locationState?.message) {
-        window.history.replaceState({}, '');
-      }
-    }, [locationState]);
-  
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
-      locationState?.message ? { type: 'success', text: locationState.message } : null
-    );
-  
-    const { handleCancel } = useCancelWithConfirm(setMessage);
+    const { handleCancel } = useCancelReservation(setMessage);
   
     return (
-      <>
-        {/* 메시지 배너 */}
-        {message && (
-          <MessageBanner message={message} />
-        )}
-  
+      <> 
         <div css={css`padding: 0 24px;`}>
           <div css={css`display: flex; align-items: baseline; gap: 6px;`}>
             <Text typography="t5" fontWeight="bold" color={colors.grey900}>
@@ -100,29 +80,6 @@ export function MyReservationSection() {
             </Button>
           }
         />
-      </div>
-    );
-  }
-  
-  function MessageBanner({ message }: { message: { type: 'success' | 'error'; text: string } }) {
-    return (
-      <div css={css`padding: 0 24px;`}>
-        <div
-          css={css`
-          padding: 10px 14px; border-radius: 10px;
-          background: ${message.type === 'success' ? colors.blue50 : colors.red50};
-          display: flex; align-items: center; gap: 8px;
-        `}
-        >
-          <Text
-            typography="t7"
-            fontWeight="medium"
-            color={message.type === 'success' ? colors.blue600 : colors.red500}
-          >
-            {message.text}
-          </Text>
-        </div>
-        <Spacing size={12} />
       </div>
     );
   }

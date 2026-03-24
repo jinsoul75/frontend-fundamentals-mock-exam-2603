@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cancelReservation } from "pages/remotes";
 
-export function useCancelWithConfirm(setMessage: (message: { type: 'success' | 'error'; text: string } | null) => void) {
+export function useCancelReservation(setMessage: (message: { type: 'success' | 'error'; text: string } | null) => void) {
     const queryClient = useQueryClient();
 
     const cancelMutation = useMutation((id: string) => cancelReservation(id), {

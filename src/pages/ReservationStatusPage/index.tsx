@@ -1,5 +1,5 @@
 import { css } from '@emotion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Top, Spacing, Border } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getTodayDateString } from 'utils/date';
@@ -7,9 +7,24 @@ import { DateSelectSection } from './components/DateSelectSection';
 import { MyReservationSection } from './components/MyReservationSection';
 import { GoToBookingButtonSection } from './components/GoToBookingButtonSection';
 import { ReservationStateSection } from './components/ReservationStateSection';
+import { useLocation } from 'react-router-dom';
+import { MessageBanner } from './components/MessageBanner';
 
 export function ReservationStatusPage() {
   const [date, setDate] = useState(getTodayDateString());
+
+  const location = useLocation();
+  const locationState = location.state as { message?: string } | null;
+
+  useEffect(() => {
+    if (locationState?.message) {
+      window.history.replaceState({}, '');
+    }
+  }, [locationState]);
+
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    locationState?.message ? { type: 'success', text: locationState.message } : null
+  );
 
   return (
     <div css={css`background: ${colors.white}; padding-bottom: 40px;`}>
@@ -33,8 +48,14 @@ export function ReservationStatusPage() {
       <Border size={8} />
       <Spacing size={24} />
 
+
+      {/* 메시지 배너 */}
+      {message && (
+        <MessageBanner message={message} />
+      )}
+
       {/* 내 예약 목록 */}
-      <MyReservationSection />
+      <MyReservationSection setMessage={setMessage} />
 
       <Spacing size={24} />
       <Border size={8} />
