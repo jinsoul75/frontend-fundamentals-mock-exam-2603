@@ -1,9 +1,9 @@
 import { css } from '@emotion/react';
 import { useEffect, useState } from 'react';
-import { Top, Spacing, Border } from '_tosslib/components';
+import { Top, Spacing, Border, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getTodayDateString } from 'utils/date';
-import { DateSelectSection } from './components/DateSelectSection';
+import { DateInput } from './components/DateInput';
 import { MyReservationSection } from './components/MyReservationSection';
 import { GoToBookingButtonSection } from './components/GoToBookingButtonSection';
 import { ReservationStateSection } from './components/ReservationStateSection';
@@ -35,7 +35,19 @@ export function ReservationStatusPage() {
       <Spacing size={24} />
 
       {/* 날짜 선택 */}
-      <DateSelectSection date={date} setDate={setDate} />
+      <div css={css`padding: 0 24px;`}>
+        <Text typography="t5" fontWeight="bold" color={colors.grey900}>
+          날짜 선택
+        </Text>
+        <Spacing size={16} />
+        <div css={css`display: flex; flex-direction: column; gap: 6px;`}>
+          <DateInput
+            value={date}
+            min={getTodayDateString()}
+            onChange={setDate}
+          />
+        </div>
+      </div>
 
       <Spacing size={24} />
       <Border size={8} />
@@ -47,7 +59,6 @@ export function ReservationStatusPage() {
       <Spacing size={24} />
       <Border size={8} />
       <Spacing size={24} />
-
 
       {/* 메시지 배너 */}
       {message && (

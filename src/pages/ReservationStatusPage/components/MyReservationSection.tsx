@@ -10,7 +10,7 @@ export function MyReservationSection({ setMessage }: { setMessage: (message: { t
     const { data: myReservationList = [] } = useQuery({ queryKey: ['myReservations'], queryFn: getMyReservations });
   
     const { handleCancel } = useCancelReservation(setMessage);
-  
+
     return (
       <> 
         <div css={css`padding: 0 24px;`}>

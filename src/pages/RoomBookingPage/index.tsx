@@ -2,17 +2,17 @@ import { css } from '@emotion/react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Top, Spacing, Border, Button, Text, Select, ListRow } from '_tosslib/components';
+import { Top, Spacing, Border, Button, Text, Select } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getRooms, getReservations, createReservation } from 'pages/remotes';
 import axios from 'axios';
 import { EQUIPMENT_LABELS, ALL_EQUIPMENT } from 'constants/equipment';
 import { TIME_SLOTS } from 'constants/timeSlots';
-import { formatDate } from 'utils/date';
-import { useBookingSearchParams } from 'hooks/useBookingSearchParams';
+import { formatDate, getTodayDateString } from 'utils/date';
 import { ErrorMessage } from './components/ErrorMessage';
 import { MeetingRoomCard } from './components/MeetingRoomCard';
 import { ValidationError } from './components/ValidationError';
+import { bookingConditionSchema, bookingSubmitSchema } from './schemas/bookingSchema';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
@@ -65,77 +65,36 @@ export function RoomBookingPage() {
   };
 
   // 입력 검증
-  let validationError: string | null = null;
   const hasTimeInputs = startTime !== '' && endTime !== '';
-  if (hasTimeInputs) {
-    if (endTime <= startTime) {
-      validationError = '종료 시간은 시작 시간보다 늦어야 합니다.';
-    } else if (attendees < 1) {
-      validationError = '참석 인원은 1명 이상이어야 합니다.';
-    }
-  }
-  const isFilterComplete = hasTimeInputs && !validationError;
+  const conditionResult = hasTimeInputs
+    ? bookingConditionSchema.safeParse({ startTime, endTime, attendees })
+    : null;
+  const validationError = conditionResult && !conditionResult.success
+    ? conditionResult.error.issues[0].message
+    : null;
+  const isFilterComplete = hasTimeInputs && conditionResult?.success === true;
 
   // 필터링
-  const floors = [...new Set(rooms.map((r: { floor: number }) => r.floor))].sort((a: number, b: number) => a - b);
+  const floors = [...new Set(rooms.map((r) => r.floor))].sort((a, b) => a - b);
 
   const availableRooms = isFilterComplete
     ? rooms
-      .filter((room: { id: string; capacity: number; equipment: string[]; floor: number }) => {
+      .filter((room) => {
         if (room.capacity < attendees) return false;
         if (!equipment.every(eq => room.equipment.includes(eq))) return false;
         if (preferredFloor !== null && room.floor !== preferredFloor) return false;
         const hasConflict = reservations.some(
-          (r: { roomId: string; date: string; start: string; end: string }) =>
+          (r) =>
             r.roomId === room.id && r.date === date && r.start < endTime && r.end > startTime
         );
         if (hasConflict) return false;
         return true;
       })
-      .sort((a: { floor: number; name: string }, b: { floor: number; name: string }) => {
+      .sort((a, b) => {
         if (a.floor !== b.floor) return a.floor - b.floor;
         return a.name.localeCompare(b.name);
       })
     : [];
-
-  const handleBook = async () => {
-    if (!selectedRoomId) {
-      setErrorMessage('회의실을 선택해주세요.');
-      return;
-    }
-    if (!startTime || !endTime) {
-      setErrorMessage('시작 시간과 종료 시간을 선택해주세요.');
-      return;
-    }
-
-    try {
-      const result = await createMutation.mutateAsync({
-        roomId: selectedRoomId,
-        date,
-        start: startTime,
-        end: endTime,
-        attendees,
-        equipment,
-      });
-
-      if ('ok' in result && result.ok) {
-        navigate('/', { state: { message: '예약이 완료되었습니다!' } });
-        return;
-      }
-
-      const errResult = result as { message?: string };
-      setErrorMessage(errResult.message ?? '예약에 실패했습니다.');
-      setSelectedRoomId(null);
-    } catch (err: unknown) {
-      let serverMessage = '예약에 실패했습니다.';
-      if (axios.isAxiosError(err)) {
-        const data = err.response?.data as { message?: string } | undefined;
-        serverMessage = data?.message ?? serverMessage;
-      }
-      setErrorMessage(serverMessage);
-      setSelectedRoomId(null);
-    }
-  };
 
   return (
     <div css={css`background: ${colors.white}; padding-bottom: 40px;`}>
@@ -175,7 +134,7 @@ export function RoomBookingPage() {
           <input
             type="date"
             value={date}
-            min={formatDate(new Date())}
+            min={getTodayDateString()}
             onChange={e => setDate(e.target.value)}
             aria-label="날짜"
             css={css`
@@ -184,7 +143,8 @@ export function RoomBookingPage() {
       width: 100%; border: 1px solid ${colors.grey200}; padding: 0 16px; outline: none;
       transition: border-color 0.15s; &:focus { border-color: ${colors.blue500}; }
     `}
-          />        </div>
+          />
+        </div>
         <Spacing size={14} />
 
         {/* 시간 */}
@@ -329,13 +289,55 @@ export function RoomBookingPage() {
           )}
 
           <Spacing size={16} />
-          <Button display="full" onClick={handleBook} disabled={createMutation.isPending}>
+          <Button display="full" onClick={async () => {
+            const submitResult = bookingSubmitSchema.safeParse({
+              roomId: selectedRoomId ?? '',
+              startTime,
+              endTime,
+            });
+            if (!submitResult.success) {
+              setErrorMessage(submitResult.error.issues[0].message);
+              return;
+            }
+
+            const { roomId, startTime: start, endTime: end } = submitResult.data;
+
+            try {
+              const result = await createMutation.mutateAsync({
+                roomId,
+                date,
+                start,
+                end,
+                attendees,
+                equipment,
+              });
+
+              if ('ok' in result && result.ok) {
+                navigate('/', { state: { message: '예약이 완료되었습니다!' } });
+                return;
+              }
+
+              const errResult = result as { message?: string };
+              setErrorMessage(errResult.message ?? '예약에 실패했습니다.');
+              setSelectedRoomId(null);
+            } catch (err: unknown) {
+              let serverMessage = '예약에 실패했습니다.';
+              if (axios.isAxiosError(err)) {
+                const data = err.response?.data as { message?: string } | undefined;
+                serverMessage = data?.message ?? serverMessage;
+              }
+              setErrorMessage(serverMessage);
+              setSelectedRoomId(null);
+            }
+          }}
+            disabled={createMutation.isPending}>
             {createMutation.isPending ? '예약 중...' : '확정'}
           </Button>
         </div>
-      )}
+      )
+      }
 
       <Spacing size={24} />
-    </div>
+    </div >
   );
 }
