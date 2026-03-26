@@ -6,6 +6,6 @@ export function timeToMinutes(time: string): number {
 }
 
 export function formatHourForDisplay(timeLabel: string): string {
-  const [h, m] = timeLabel.split(':').map(Number);
-  return `${h}:${m}`;
+  const time = timeLabel.slice(0, 2);
+  return `${time}:00`;
 }

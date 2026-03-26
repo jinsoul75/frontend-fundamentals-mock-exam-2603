@@ -1,8 +1,8 @@
 import { colors } from "_tosslib/constants/colors";
 import { css } from "@emotion/react";
 
-// 고민: datepicker인데 value가 date타입이 아니라면 당황스럽나?
-
+// 고민1: datepicker인데 value가 date타입이 아니라면 당황스럽나?
+// 고민2: value, min이 Date라는걸 알 수 있나? -> 컴포넌트 이름에서 알 수 있다.
 interface DateInputProps {
     value: string;
     min: string;

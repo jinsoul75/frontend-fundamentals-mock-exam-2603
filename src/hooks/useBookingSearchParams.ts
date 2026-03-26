@@ -1,44 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { formatDate } from 'utils/date';
+import { parseAsInteger, useQueryStates, parseAsString, parseAsArrayOf } from 'nuqs';
+import { useCallback } from 'react';
+import { getTodayDateString } from 'utils/date';
 
-export function useBookingSearchParams() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const [date, setDate] = useState(searchParams.get('date') || formatDate(new Date()));
-  const [startTime, setStartTime] = useState(searchParams.get('startTime') || '');
-  const [endTime, setEndTime] = useState(searchParams.get('endTime') || '');
-  const [attendees, setAttendees] = useState(Number(searchParams.get('attendees')) || 1);
-  const [equipment, setEquipment] = useState<string[]>(
-    searchParams.get('equipment') ? searchParams.get('equipment')!.split(',').filter(Boolean) : []
+export function useBookingSearchParams({ onFilterChange }: { onFilterChange: () => void }) {
+  const [{ date, startTime, endTime, attendees, equipment, floor: preferredFloor }, setRawParams] = useQueryStates(
+    {
+      date: parseAsString.withDefault(getTodayDateString()),
+      startTime: parseAsString.withDefault(''),
+      endTime: parseAsString.withDefault(''),
+      attendees: parseAsInteger.withDefault(1),
+      equipment: parseAsArrayOf(parseAsString, ',').withDefault([]),
+      floor: parseAsInteger,
+    },
+    { history: 'replace' }
   );
-  const [preferredFloor, setPreferredFloor] = useState<number | null>(
-    searchParams.get('floor') ? Number(searchParams.get('floor')) : null
-  );
 
-  useEffect(() => {
-    const params: Record<string, string> = {};
-    if (date) params.date = date;
-    if (startTime) params.startTime = startTime;
-    if (endTime) params.endTime = endTime;
-    if (attendees > 1) params.attendees = String(attendees);
-    if (equipment.length > 0) params.equipment = equipment.join(',');
-    if (preferredFloor !== null) params.floor = String(preferredFloor);
-    setSearchParams(params, { replace: true });
-  }, [date, startTime, endTime, attendees, equipment, preferredFloor, setSearchParams]);
-
-  return {
-    date,
-    setDate,
-    startTime,
-    setStartTime,
-    endTime,
-    setEndTime,
-    attendees,
-    setAttendees,
-    equipment,
-    setEquipment,
-    preferredFloor,
-    setPreferredFloor,
+  const setParams: typeof setRawParams = (updates) => {
+    onFilterChange();
+    return setRawParams(updates);
   };
-}
+
+  return { params: { date, startTime, endTime, attendees, equipment, preferredFloor }, setParams };
+};

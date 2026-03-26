@@ -1,30 +1,32 @@
 import { css } from '@emotion/react';
-import { useEffect, useState } from 'react';
-import { Top, Spacing, Border, Text } from '_tosslib/components';
+import { useState } from 'react';
+import { Top, Spacing, Border, Text, Button } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getTodayDateString } from 'utils/date';
-import { DateInput } from './components/DateInput';
-import { MyReservationSection } from './components/MyReservationSection';
-import { GoToBookingButtonSection } from './components/GoToBookingButtonSection';
-import { ReservationStateSection } from './components/ReservationStateSection';
-import { useLocation } from 'react-router-dom';
-import { MessageBanner } from './components/MessageBanner';
+import { DateInput } from '../../components/DateInput';
+import { MyReservationCard } from '../../components/MyReservationList';
+import { ReservationTimeline } from '../../components/ReservationTimeline';
+import { MessageBanner } from '../../components/MessageBanner';
+import { Section } from 'components/Section';
+import { useCancelReservation } from 'hooks/useCancelReservation';
+import { useLocationStateMessage } from 'hooks/useLocationStateMessage';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getMyReservations } from 'pages/remotes';
 
 export function ReservationStatusPage() {
+  const navigate = useNavigate();
+
   const [date, setDate] = useState(getTodayDateString());
 
-  const location = useLocation();
-  const locationState = location.state as { message?: string } | null;
+  const { data: myReservations = [] } = useQuery({ queryKey: ['myReservations'], queryFn: getMyReservations });
 
-  useEffect(() => {
-    if (locationState?.message) {
-      window.history.replaceState({}, '');
-    }
-  }, [locationState]);
+  const { message, setMessage } = useLocationStateMessage();
 
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
-    locationState?.message ? { type: 'success', text: locationState.message } : null
-  );
+  const { confirmAndCancel } = useCancelReservation({
+    onSuccess: () => setMessage({ type: 'success', text: '예약이 취소되었습니다.' }),
+    onError: () => setMessage({ type: 'error', text: '예약 취소에 실패했습니다.' }),
+  });
 
   return (
     <div css={css`background: ${colors.white}; padding-bottom: 40px;`}>
@@ -35,26 +37,26 @@ export function ReservationStatusPage() {
       <Spacing size={24} />
 
       {/* 날짜 선택 */}
-      <div css={css`padding: 0 24px;`}>
-        <Text typography="t5" fontWeight="bold" color={colors.grey900}>
-          날짜 선택
-        </Text>
+      <Section >
+        <Text typography="t5" fontWeight="bold" color={colors.grey900}>날짜 선택</Text>
         <Spacing size={16} />
-        <div css={css`display: flex; flex-direction: column; gap: 6px;`}>
-          <DateInput
-            value={date}
-            min={getTodayDateString()}
-            onChange={setDate}
-          />
-        </div>
-      </div>
+        <DateInput
+          value={date}
+          min={getTodayDateString()}
+          onChange={setDate}
+        />
+      </Section>
 
       <Spacing size={24} />
       <Border size={8} />
       <Spacing size={24} />
 
       {/* 예약 현황 타임라인 */}
-      <ReservationStateSection date={date} />
+      <Section >
+        <Text typography="t5" fontWeight="bold" color={colors.grey900}>예약 현황</Text>
+        <Spacing size={16} />
+        <ReservationTimeline targetDate={date} />
+      </Section>
 
       <Spacing size={24} />
       <Border size={8} />
@@ -66,14 +68,52 @@ export function ReservationStatusPage() {
       )}
 
       {/* 내 예약 목록 */}
-      <MyReservationSection setMessage={setMessage} />
+      <Section>
+        <div css={css`display: flex; align-items: baseline; gap: 6px;`}>
+          <Text typography="t5" fontWeight="bold" color={colors.grey900}>
+            내 예약
+          </Text>
+          {myReservations.length > 0 ? `${myReservations.length}건` : null}
+        </div>
+        <Spacing size={16} />
+
+        {myReservations.length === 0 ? (
+          <div css={css`padding: 40px 0; text-align: center; background: ${colors.grey50}; border-radius: 14px;`}>
+            <Text typography="t6" color={colors.grey500}>
+              예약 내역이 없습니다.
+            </Text>
+          </div>
+        ) : (
+          <div css={css`display: flex; flex-direction: column; gap: 10px;`}>
+            {myReservations.map((reservation) => (
+              <MyReservationCard
+                key={reservation.id}
+                reservation={reservation}
+                right={
+                  <Button
+                    type="danger"
+                    style="weak"
+                    size="small"
+                    onClick={() => confirmAndCancel(reservation.id)}
+                  >
+                    취소
+                  </Button>}
+              />
+            ))}
+          </div>
+        )}
+      </Section>
 
       <Spacing size={24} />
       <Border size={8} />
       <Spacing size={24} />
 
       {/* 예약하기 버튼 */}
-      <GoToBookingButtonSection />
+      <Section>
+        <Button display="full" onClick={() => navigate('/booking')}>
+          예약하기
+        </Button>
+      </Section>
       <Spacing size={24} />
     </div>
   );

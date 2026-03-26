@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { describe, test, expect, afterEach, vi } from 'vitest';
 import App from './App';
 import * as remotes from 'pages/remotes';
@@ -11,10 +12,13 @@ describe('예약 현황 페이지', () => {
   });
 
   function renderApp(route = '/') {
+    const searchParams = route.includes('?') ? route.slice(route.indexOf('?')) : '';
     return render(
-      <MemoryRouter initialEntries={[route]}>
-        <App />
-      </MemoryRouter>
+      <NuqsTestingAdapter searchParams={searchParams} hasMemory>
+        <MemoryRouter initialEntries={[route]}>
+          <App />
+        </MemoryRouter>
+      </NuqsTestingAdapter>
     );
   }
 
@@ -128,10 +132,13 @@ describe('예약하기 페이지', () => {
   });
 
   function renderApp(route = '/booking') {
+    const searchParams = route.includes('?') ? route.slice(route.indexOf('?')) : '';
     return render(
-      <MemoryRouter initialEntries={[route]}>
-        <App />
-      </MemoryRouter>
+      <NuqsTestingAdapter searchParams={searchParams} hasMemory>
+        <MemoryRouter initialEntries={[route]}>
+          <App />
+        </MemoryRouter>
+      </NuqsTestingAdapter>
     );
   }
 
