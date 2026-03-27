@@ -13,7 +13,7 @@ import { useLocationStateMessage } from './hooks/useLocationStateMessage';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMyReservations, getRooms } from 'pages/remotes';
-import { getRoomName } from './utils/utils';
+import { getRoomName } from './utils/getRoomName';
 import { PageLayout } from 'pages/PageLayout';
 import { Flex } from 'components/Flex';
 import { EmptyState } from 'components/EmptyState';
@@ -74,7 +74,6 @@ export function ReservationStatusPage() {
 
       {/* 내 예약 목록 */}
       <Section>
-        {/* <div css={css`display: flex; align-items: baseline; gap: 6px;`}> */}
         <Flex align="baseline" gap={6}>
           <Text typography="t5" fontWeight="bold" color={colors.grey900}>
             내 예약
@@ -85,7 +84,6 @@ export function ReservationStatusPage() {
             </Text>
           )}
         </Flex>
-        {/* </div> */}
         <Spacing size={16} />
 
         {myReservations.length === 0 ? (

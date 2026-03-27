@@ -1,5 +1,4 @@
 import { parseAsInteger, useQueryStates, parseAsString, parseAsArrayOf } from 'nuqs';
-import { useCallback } from 'react';
 import { getTodayDateString } from 'utils/date';
 
 export function useBookingSearchParams({ onFilterChange }: { onFilterChange: () => void }) {
