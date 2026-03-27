@@ -1,10 +1,10 @@
 import { css } from '@emotion/react';
-import { ChangeEvent, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Top, Spacing, Border, Button, Text, Select } from '_tosslib/components';
+import { useQuery } from '@tanstack/react-query';
+import { Top, Spacing, Border, Button, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
-import { getRooms, getReservations, createReservation } from 'pages/remotes';
+import { getRooms, getReservations } from 'pages/remotes';
 import axios from 'axios';
 import { EQUIPMENT_LABELS, ALL_EQUIPMENT } from 'constants/equipment';
 import { TIME_SLOTS } from 'constants/timeSlots';
@@ -12,11 +12,17 @@ import { getTodayDateString } from 'utils/date';
 import { ErrorMessage } from '../../components/ErrorMessage';
 import { MeetingRoomCard } from '../../components/MeetingRoomCard';
 import { ValidationError } from '../../components/ValidationError';
-import { bookingConditionSchema, bookingSubmitSchema } from './schemas/bookingSchema';
+import { bookingSubmitSchema, validateBookingCondition } from './schemas/bookingSchema';
 import { DateInput } from '../../components/DateInput';
 import { Section } from 'components/Section';
-import { useBookingSearchParams } from 'hooks/useBookingSearchParams';
-import { Equipment, Reservation, Room } from '_tosslib/server/types';
+import { useBookingSearchParams } from './hooks/useBookingSearchParams';
+import { Reservation, Room } from '_tosslib/server/types';
+import { getAvailableRooms, getFloors } from './utils/getAvailableRooms';
+import { useCreateReservation } from './hooks/useCreateReservation';
+import { NumberInput } from '../../components/NumberInput';
+import { TimeSelect } from '../../components/TimeSelect';
+import { FloorSelect } from '../../components/FloorSelect';
+import { MultiSelectButton } from '../../components/MultiSelectButton';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
@@ -251,163 +257,5 @@ export function RoomBookingPage() {
 
       <Spacing size={24} />
     </div >
-  );
-}
-
-interface BookingFilter {
-  date: string;
-  startTime: string;
-  endTime: string;
-  attendees: number;
-  equipment: string[];
-  preferredFloor: number | null;
-}
-
-function getFloors(rooms: Room[]): number[] {
-  return [...new Set(rooms.map((room) => room.floor))].sort((a, b) => a - b);
-}
-
-function hasEnoughCapacity(room: Room, attendees: number) {
-  return room.capacity >= attendees;
-}
-
-function hasRequiredEquipment(room: Room, equipment: Equipment[]) {
-  return equipment.every(eq => room.equipment.includes(eq));
-}
-
-function isOnPreferredFloor(room: Room, floor: number | null) {
-  return floor === null || room.floor === floor;
-}
-
-function hasTimeConflict(room: Room, reservations: Reservation[], filter: BookingFilter) {
-  return reservations.some(
-    reservation => reservation.roomId === room.id
-      && reservation.date === filter.date
-      && reservation.start < filter.endTime
-      && reservation.end > filter.startTime
-  );
-}
-
-const byFloorThenName = (a: Room, b: Room) =>
-  a.floor !== b.floor ? a.floor - b.floor : a.name.localeCompare(b.name);
-
-export function getAvailableRooms(
-  rooms: Room[],
-  reservations: Reservation[],
-  filter: BookingFilter
-): Room[] {
-  return rooms
-    .filter(room =>
-      hasEnoughCapacity(room, filter.attendees)
-      && hasRequiredEquipment(room, filter.equipment as Equipment[])
-      && isOnPreferredFloor(room, filter.preferredFloor)
-      && !hasTimeConflict(room, reservations, filter)
-    )
-    .sort(byFloorThenName);
-}
-
-function NumberInput({ value, min, onChange, label }: { value: number; min: number; onChange: (value: ChangeEvent<HTMLInputElement>) => void; label: string }) {
-  return (
-    <input
-      type="number"
-      value={value}
-      min={min}
-      onChange={onChange}
-      aria-label={label}
-      css={css`
-        box-sizing: border-box; font-size: 16px; font-weight: 500; line-height: 1.5; height: 48px;
-        background-color: ${colors.grey50}; border-radius: 12px; color: ${colors.grey800};
-        width: 100%; border: 1px solid ${colors.grey200}; padding: 0 16px; outline: none;
-        transition: border-color 0.15s; &:focus { border-color: ${colors.blue500}; }
-      `}
-    />
-  );
-}
-
-function validateBookingCondition(params: {
-  startTime: string;
-  endTime: string;
-  attendees: number;
-}): { isComplete: boolean; validationError: string | null } {
-  const hasTimeInputs = params.startTime !== '' && params.endTime !== '';
-  if (!hasTimeInputs) {
-    return { isComplete: false, validationError: null };
-  }
-
-  const result = bookingConditionSchema.safeParse(params);
-  if (result.success) {
-    return { isComplete: true, validationError: null };
-  }
-
-  return { isComplete: false, validationError: result.error.issues[0].message };
-}
-
-function useCreateReservation() {
-  const queryClient = useQueryClient();
-
-  const createReservationMutation = useMutation(
-    (data: { roomId: string; date: string; start: string; end: string; attendees: number; equipment: string[] }) =>
-      createReservation(data),
-    {
-      onSuccess: (_data, variables) => {
-        queryClient.invalidateQueries({ queryKey: ['reservations', variables.date] });
-        queryClient.invalidateQueries({ queryKey: ['myReservations'] });
-      },
-    }
-  );
-
-  return { createReservationMutation };
-}
-
-function TimeSelect({ value, label, options, onChange }: { value: string; label: string; options: string[]; onChange: (value: string) => void }) {
-  return (
-    <Select aria-label={label} value={value} onChange={e => onChange(e.target.value)}>
-      <option value="">선택</option>
-      {options.map(option => <option key={option} value={option}>{option}</option>)}
-    </Select>
-  );
-}
-
-function FloorSelect({ value, floors, onChange, label }: {
-  value: number | null;
-  floors: number[];
-  onChange: (value: number | null) => void;
-  label: string;
-}) {
-  return (
-    <Select
-      value={value ?? ''}
-      onChange={e => {
-        const val = e.target.value;
-        onChange(val === '' ? null : Number(val));
-      }}
-      aria-label={label}
-    >
-      <option value="">전체</option>
-      {floors.map(f => (
-        <option key={f} value={f}>{f}층</option>
-      ))}
-    </Select>
-  );
-}
-
-function MultiSelectButton({ selected, onClick, label, value }: { selected: boolean; onClick: () => void; label: string; value: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      aria-pressed={selected}
-      css={css`   
-        padding: 8px 16px; border-radius: 20px;
-        border: 1px solid ${selected ? colors.blue500 : colors.grey200};
-        background: ${selected ? colors.blue50 : colors.grey50};
-        color: ${selected ? colors.blue600 : colors.grey700};
-        font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s;
-        &:hover { border-color: ${selected ? colors.blue500 : colors.grey400}; }
-      `}
-    >
-      {value}
-    </button>
   );
 }

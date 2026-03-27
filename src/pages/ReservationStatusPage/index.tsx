@@ -8,11 +8,12 @@ import { MyReservationCard } from '../../components/MyReservationList';
 import { ReservationTimeline } from '../../components/ReservationTimeline';
 import { MessageBanner } from '../../components/MessageBanner';
 import { Section } from 'components/Section';
-import { useCancelReservation } from 'hooks/useCancelReservation';
-import { useLocationStateMessage } from 'hooks/useLocationStateMessage';
+import { useCancelReservation } from './hooks/useCancelReservation';
+import { useLocationStateMessage } from './hooks/useLocationStateMessage';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMyReservations, getRooms } from 'pages/remotes';
+import { getRoomName } from './utils/utils';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();
@@ -119,9 +120,4 @@ export function ReservationStatusPage() {
       <Spacing size={24} />
     </div>
   );
-}
-
-
-function getRoomName(rooms: { id: string; name: string }[], roomId: string) {
-  return rooms.find((room) => room.id === roomId)?.name ?? roomId;
 }

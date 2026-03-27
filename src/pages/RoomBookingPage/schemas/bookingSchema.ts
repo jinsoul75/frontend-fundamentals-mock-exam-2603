@@ -25,3 +25,21 @@ export const bookingSubmitSchema = z
   });
 
 export type BookingSubmit = z.infer<typeof bookingSubmitSchema>;
+
+export function validateBookingCondition(params: {
+  startTime: string;
+  endTime: string;
+  attendees: number;
+}): { isComplete: boolean; validationError: string | null } {
+  const hasTimeInputs = params.startTime !== '' && params.endTime !== '';
+  if (!hasTimeInputs) {
+    return { isComplete: false, validationError: null };
+  }
+
+  const result = bookingConditionSchema.safeParse(params);
+  if (result.success) {
+    return { isComplete: true, validationError: null };
+  }
+
+  return { isComplete: false, validationError: result.error.issues[0].message };
+}

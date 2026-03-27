@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cancelReservation } from "pages/remotes";
-// import { useState } from "react";
 
 export function useCancelReservation({ onSuccess, onError }: {
     onSuccess: () => void;
