@@ -23,6 +23,10 @@ import { NumberInput } from '../../components/NumberInput';
 import { TimeSelect } from '../../components/TimeSelect';
 import { FloorSelect } from '../../components/FloorSelect';
 import { MultiSelectButton } from '../../components/MultiSelectButton';
+import { PageLayout } from 'pages/PageLayout';
+import { TextLink } from 'components/TextLink';
+import { Flex } from 'components/Flex';
+import { EmptyState } from 'components/EmptyState';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
@@ -50,20 +54,12 @@ export function RoomBookingPage() {
     ? getAvailableRooms(rooms as Room[], reservations as Reservation[], { date, startTime, endTime, attendees, equipment, preferredFloor }) : [];
 
   return (
-    <div css={css`background: ${colors.white}; padding-bottom: 40px;`}>
-      <div css={css`padding: 12px 24px 0;`}>
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          aria-label="뒤로가기"
-          css={css`
-            background: none; border: none; padding: 0; cursor: pointer; font-size: 14px;
-            color: ${colors.grey600}; &:hover { color: ${colors.grey900}; }
-          `}
-        >
+    <PageLayout>
+      <Flex css={css`padding: 12px 24px 0;`}>
+        <TextLink onClick={() => navigate('/')} ariaLabel="뒤로가기">
           ← 예약 현황으로
-        </button>
-      </div>
+        </TextLink>
+      </Flex>
 
       <Top.Top03 css={css`padding-left: 24px; padding-right: 24px;`}>
         예약하기
@@ -83,19 +79,19 @@ export function RoomBookingPage() {
         <Spacing size={16} />
 
         {/* 날짜 */}
-        <div css={css`display: flex; flex-direction: column; gap: 6px;`}>
+        <Flex direction="column" gap={6}>
           <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>날짜</Text>
           <DateInput
             value={date}
             min={getTodayDateString()}
             onChange={(value) => setParams({ date: value })}
           />
-        </div>
+        </Flex>
         <Spacing size={14} />
 
         {/* 시간 */}
-        <div css={css`display: flex; gap: 12px;`}>
-          <div css={css`display: flex; flex-direction: column; gap: 6px; flex: 1;`}>
+        <Flex direction="row" gap={12}>
+          <Flex direction="column" gap={6} flex={1}>
             <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>시작 시간</Text>
             <TimeSelect
               value={startTime}
@@ -103,8 +99,8 @@ export function RoomBookingPage() {
               options={TIME_SLOTS.slice(0, -1)}
               onChange={value => setParams({ startTime: value })}
             />
-          </div>
-          <div css={css`display: flex; flex-direction: column; gap: 6px; flex: 1;`}>
+          </Flex>
+          <Flex direction="column" gap={6} flex={1}>
             <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>종료 시간</Text>
             <TimeSelect
               value={endTime}
@@ -112,13 +108,13 @@ export function RoomBookingPage() {
               options={TIME_SLOTS.slice(1)}
               onChange={value => setParams({ endTime: value })}
             />
-          </div>
-        </div>
+          </Flex>
+        </Flex>
         <Spacing size={14} />
 
         {/* 참석 인원 + 선호 층 */}
-        <div css={css`display: flex; gap: 12px;`}>
-          <div css={css`display: flex; flex-direction: column; gap: 6px; flex: 1;`}>
+        <Flex direction="row" gap={12}>
+          <Flex direction="column" gap={6} flex={1}>
             <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>참석 인원</Text>
             <NumberInput
               value={attendees}
@@ -126,8 +122,8 @@ export function RoomBookingPage() {
               onChange={e => setParams({ attendees: Math.max(1, Number(e.target.value)) })}
               label="참석 인원"
             />
-          </div>
-          <div css={css`display: flex; flex-direction: column; gap: 6px; flex: 1;`}>
+          </Flex>
+          <Flex direction="column" gap={6} flex={1}>
             <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>선호 층</Text>
             <FloorSelect
               value={preferredFloor}
@@ -135,15 +131,15 @@ export function RoomBookingPage() {
               onChange={value => setParams({ floor: value })}
               label="선호 층"
             />
-          </div>
-        </div>
+          </Flex>
+        </Flex>
         <Spacing size={14} />
 
         {/* 장비 */}
-        <div>
+        <Flex direction="column" gap={6}>
           <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>필요 장비</Text>
           <Spacing size={8} />
-          <div css={css`display: flex; gap: 8px; flex-wrap: wrap;`}>
+          <Flex direction="row" gap={8} wrap>
             {ALL_EQUIPMENT.map(eq => {
               const selected = equipment.includes(eq);
 
@@ -157,8 +153,8 @@ export function RoomBookingPage() {
                 />
               );
             })}
-          </div>
-        </div>
+          </Flex>
+        </Flex>
       </Section>
 
       {validationError && (
@@ -172,24 +168,20 @@ export function RoomBookingPage() {
       {/* 예약 가능 회의실 목록 */}
       {isFilterComplete && (
         <Section>
-          <div css={css`display: flex; align-items: baseline; gap: 6px;`}>
+          <Flex align="baseline" gap={6}>
             <Text typography="t5" fontWeight="bold" color={colors.grey900}>
               예약 가능 회의실
             </Text>
             <Text typography="t7" fontWeight="medium" color={colors.grey500}>
               {availableRooms.length}개
             </Text>
-          </div>
+          </Flex>
           <Spacing size={16} />
 
           {availableRooms.length === 0 ? (
-            <div css={css`padding: 40px 0; text-align: center; background: ${colors.grey50}; border-radius: 14px;`}>
-              <Text typography="t6" color={colors.grey500}>
-                조건에 맞는 회의실이 없습니다.
-              </Text>
-            </div>
+            <EmptyState message="조건에 맞는 회의실이 없습니다." />
           ) : (
-            <div css={css`display: flex; flex-direction: column; gap: 10px;`}>
+            <Flex direction="column" gap={10}>
               {availableRooms.map((room) => {
                 const isSelected = selectedRoomId === room.id;
                 return (
@@ -203,7 +195,7 @@ export function RoomBookingPage() {
                     onSelect={() => setSelectedRoomId(room.id)} />
                 );
               })}
-            </div>
+            </Flex>
           )}
 
           <Spacing size={16} />
@@ -256,6 +248,6 @@ export function RoomBookingPage() {
       }
 
       <Spacing size={24} />
-    </div >
+    </PageLayout >
   );
 }

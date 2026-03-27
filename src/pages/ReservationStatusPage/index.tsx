@@ -14,6 +14,9 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMyReservations, getRooms } from 'pages/remotes';
 import { getRoomName } from './utils/utils';
+import { PageLayout } from 'pages/PageLayout';
+import { Flex } from 'components/Flex';
+import { EmptyState } from 'components/EmptyState';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();
@@ -31,7 +34,7 @@ export function ReservationStatusPage() {
   });
 
   return (
-    <div css={css`background: ${colors.white}; padding-bottom: 40px;`}>
+    <PageLayout>
       <Top.Top03 css={css`padding-left: 24px; padding-right: 24px;`}>
         회의실 예약
       </Top.Top03>
@@ -71,7 +74,8 @@ export function ReservationStatusPage() {
 
       {/* 내 예약 목록 */}
       <Section>
-        <div css={css`display: flex; align-items: baseline; gap: 6px;`}>
+        {/* <div css={css`display: flex; align-items: baseline; gap: 6px;`}> */}
+        <Flex align="baseline" gap={6}>
           <Text typography="t5" fontWeight="bold" color={colors.grey900}>
             내 예약
           </Text>
@@ -80,17 +84,14 @@ export function ReservationStatusPage() {
               {myReservations.length}건
             </Text>
           )}
-        </div>
+        </Flex>
+        {/* </div> */}
         <Spacing size={16} />
 
         {myReservations.length === 0 ? (
-          <div css={css`padding: 40px 0; text-align: center; background: ${colors.grey50}; border-radius: 14px;`}>
-            <Text typography="t6" color={colors.grey500}>
-              예약 내역이 없습니다.
-            </Text>
-          </div>
+          <EmptyState message="예약 내역이 없습니다." />
         ) : (
-          <div css={css`display: flex; flex-direction: column; gap: 10px;`}>
+          <Flex direction="column" gap={10}>
             {myReservations.map((reservation) => (
               <MyReservationCard
                 key={reservation.id}
@@ -103,7 +104,7 @@ export function ReservationStatusPage() {
                 onCancel={() => confirmAndCancel(reservation.id)}
               />
             ))}
-          </div>
+          </Flex>
         )}
       </Section>
 
@@ -118,6 +119,6 @@ export function ReservationStatusPage() {
         </Button>
       </Section>
       <Spacing size={24} />
-    </div>
+    </PageLayout>
   );
 }
