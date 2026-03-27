@@ -7,7 +7,7 @@ import { EQUIPMENT_LABELS } from "constants/equipment";
 
 
 
-export function MyReservationCard({ reservation, right }: { reservation: { id: string; roomId: string; date: string; start: string; end: string; attendees: number; equipment: string[] }, right: React.ReactNode }) {
+export function MyReservationCard({ roomName, date, startTime, endTime, attendees, equipment, onCancel }: { roomName: string; date: string; startTime: string; endTime: string; attendees: number; equipment: string[]; onCancel: () => void }) {
   const { data: rooms = [] } = useQuery({ queryKey: ['rooms'], queryFn: getRooms });
 
   return (
@@ -17,18 +17,14 @@ export function MyReservationCard({ reservation, right }: { reservation: { id: s
       <ListRow
         contents={
           <ListRow.Text2Rows
-            top={getRoomName(rooms, reservation.roomId)}
+            top={roomName}
             topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
-            bottom={`${reservation.date} ${reservation.start}~${reservation.end} · ${reservation.attendees}명 · ${reservation.equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ') || '장비 없음'}`}
+            bottom={`${date} ${startTime}~${endTime} · ${attendees}명 · ${equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ') || '장비 없음'}`}
             bottomProps={{ typography: 't7', color: colors.grey600 }}
           />
         }
-        right={right}
+        right={<Button type="danger" style="weak" size="small" onClick={onCancel}>취소</Button>}
       />
     </div>
   );
-}
-
-function getRoomName(rooms: { id: string; name: string }[], roomId: string) {
-  return rooms.find((room) => room.id === roomId)?.name ?? roomId;
 }

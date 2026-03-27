@@ -12,7 +12,7 @@ import { useCancelReservation } from 'hooks/useCancelReservation';
 import { useLocationStateMessage } from 'hooks/useLocationStateMessage';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getMyReservations } from 'pages/remotes';
+import { getMyReservations, getRooms } from 'pages/remotes';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();
@@ -20,6 +20,7 @@ export function ReservationStatusPage() {
   const [date, setDate] = useState(getTodayDateString());
 
   const { data: myReservations = [] } = useQuery({ queryKey: ['myReservations'], queryFn: getMyReservations });
+  const { data: rooms = [] } = useQuery({ queryKey: ['rooms'], queryFn: getRooms });
 
   const { message, setMessage } = useLocationStateMessage();
 
@@ -73,7 +74,11 @@ export function ReservationStatusPage() {
           <Text typography="t5" fontWeight="bold" color={colors.grey900}>
             내 예약
           </Text>
-          {myReservations.length > 0 ? `${myReservations.length}건` : null}
+          {myReservations.length > 0 && (
+            <Text typography="t7" fontWeight="medium" color={colors.grey500}>
+              {myReservations.length}건
+            </Text>
+          )}
         </div>
         <Spacing size={16} />
 
@@ -88,16 +93,13 @@ export function ReservationStatusPage() {
             {myReservations.map((reservation) => (
               <MyReservationCard
                 key={reservation.id}
-                reservation={reservation}
-                right={
-                  <Button
-                    type="danger"
-                    style="weak"
-                    size="small"
-                    onClick={() => confirmAndCancel(reservation.id)}
-                  >
-                    취소
-                  </Button>}
+                roomName={getRoomName(rooms, reservation.roomId)}
+                date={reservation.date}
+                startTime={reservation.start}
+                endTime={reservation.end}
+                attendees={reservation.attendees}
+                equipment={reservation.equipment}
+                onCancel={() => confirmAndCancel(reservation.id)}
               />
             ))}
           </div>
@@ -117,4 +119,9 @@ export function ReservationStatusPage() {
       <Spacing size={24} />
     </div>
   );
+}
+
+
+function getRoomName(rooms: { id: string; name: string }[], roomId: string) {
+  return rooms.find((room) => room.id === roomId)?.name ?? roomId;
 }

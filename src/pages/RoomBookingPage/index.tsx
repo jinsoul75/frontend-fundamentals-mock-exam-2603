@@ -9,13 +9,14 @@ import axios from 'axios';
 import { EQUIPMENT_LABELS, ALL_EQUIPMENT } from 'constants/equipment';
 import { TIME_SLOTS } from 'constants/timeSlots';
 import { getTodayDateString } from 'utils/date';
-import { ErrorMessage } from './components/ErrorMessage';
-import { MeetingRoomCard } from './components/MeetingRoomCard';
-import { ValidationError } from './components/ValidationError';
+import { ErrorMessage } from '../../components/ErrorMessage';
+import { MeetingRoomCard } from '../../components/MeetingRoomCard';
+import { ValidationError } from '../../components/ValidationError';
 import { bookingConditionSchema, bookingSubmitSchema } from './schemas/bookingSchema';
 import { DateInput } from '../../components/DateInput';
 import { Section } from 'components/Section';
 import { useBookingSearchParams } from 'hooks/useBookingSearchParams';
+import { Equipment, Reservation, Room } from '_tosslib/server/types';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function RoomBookingPage() {
   const { isComplete: isFilterComplete, validationError } = validateBookingCondition({ startTime, endTime, attendees });
 
   const availableRooms = isFilterComplete
-    ? getAvailableRooms(rooms, reservations, { date, startTime, endTime, attendees, equipment, preferredFloor }) : [];
+    ? getAvailableRooms(rooms as Room[], reservations as Reservation[], { date, startTime, endTime, attendees, equipment, preferredFloor }) : [];
 
   return (
     <div css={css`background: ${colors.white}; padding-bottom: 40px;`}>
@@ -124,7 +125,7 @@ export function RoomBookingPage() {
             <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>선호 층</Text>
             <FloorSelect
               value={preferredFloor}
-              floors={getFloors(rooms)}
+              floors={getFloors(rooms as Room[])}
               onChange={value => setParams({ floor: value })}
               label="선호 층"
             />
@@ -186,14 +187,21 @@ export function RoomBookingPage() {
               {availableRooms.map((room) => {
                 const isSelected = selectedRoomId === room.id;
                 return (
-                  <MeetingRoomCard key={room.id} room={room} isSelected={isSelected} setSelectedRoomId={setSelectedRoomId} />
+                  <MeetingRoomCard
+                    key={room.id}
+                    floor={room.floor}
+                    capacity={room.capacity}
+                    equipment={room.equipment}
+                    name={room.name}
+                    isSelected={isSelected}
+                    onSelect={() => setSelectedRoomId(room.id)} />
                 );
               })}
             </div>
           )}
 
           <Spacing size={16} />
-          <Button display="full" onClick={async () => {
+          <Button display="full" onClick={() => {
             const submitResult = bookingSubmitSchema.safeParse({
               roomId: selectedRoomId ?? '',
               startTime,
@@ -207,33 +215,32 @@ export function RoomBookingPage() {
 
             const { roomId, startTime: start, endTime: end } = submitResult.data;
 
-            try {
-              const result = await createReservationMutation.mutateAsync({
-                roomId,
-                date,
-                start,
-                end,
-                attendees,
-                equipment,
+            createReservationMutation.mutateAsync({
+              roomId,
+              date,
+              start,
+              end,
+              attendees,
+              equipment,
+            })
+              .then((result) => {
+                if ('ok' in result && result.ok) {
+                  navigate('/', { state: { message: '예약이 완료되었습니다!' } });
+                  return;
+                }
+                const errResult = result;
+                setErrorMessage(errResult.message ?? '예약에 실패했습니다.');
+                setSelectedRoomId(null);
+              })
+              .catch((err: unknown) => {
+                let serverMessage = '예약에 실패했습니다.';
+                if (axios.isAxiosError(err)) {
+                  const data = err.response?.data as { message?: string } | undefined;
+                  serverMessage = data?.message ?? serverMessage;
+                }
+                setErrorMessage(serverMessage);
+                setSelectedRoomId(null);
               });
-
-              if ('ok' in result && result.ok) {
-                navigate('/', { state: { message: '예약이 완료되었습니다!' } });
-                return;
-              }
-
-              const errResult = result as { message?: string };
-              setErrorMessage(errResult.message ?? '예약에 실패했습니다.');
-              setSelectedRoomId(null);
-            } catch (err: unknown) {
-              let serverMessage = '예약에 실패했습니다.';
-              if (axios.isAxiosError(err)) {
-                const data = err.response?.data as { message?: string } | undefined;
-                serverMessage = data?.message ?? serverMessage;
-              }
-              setErrorMessage(serverMessage);
-              setSelectedRoomId(null);
-            }
           }}
             disabled={createReservationMutation.isPending}>
             {createReservationMutation.isPending ? '예약 중...' : '확정'}
@@ -247,8 +254,6 @@ export function RoomBookingPage() {
   );
 }
 
-type Room = { id: string; name: string; floor: number; capacity: number; equipment: string[] };
-type Reservation = { id: string; roomId: string; date: string; start: string; end: string };
 interface BookingFilter {
   date: string;
   startTime: string;
@@ -266,8 +271,8 @@ function hasEnoughCapacity(room: Room, attendees: number) {
   return room.capacity >= attendees;
 }
 
-function hasRequiredEquipment(room: Room, required: string[]) {
-  return required.every(eq => room.equipment.includes(eq));
+function hasRequiredEquipment(room: Room, equipment: Equipment[]) {
+  return equipment.every(eq => room.equipment.includes(eq));
 }
 
 function isOnPreferredFloor(room: Room, floor: number | null) {
@@ -294,7 +299,7 @@ export function getAvailableRooms(
   return rooms
     .filter(room =>
       hasEnoughCapacity(room, filter.attendees)
-      && hasRequiredEquipment(room, filter.equipment)
+      && hasRequiredEquipment(room, filter.equipment as Equipment[])
       && isOnPreferredFloor(room, filter.preferredFloor)
       && !hasTimeConflict(room, reservations, filter)
     )
