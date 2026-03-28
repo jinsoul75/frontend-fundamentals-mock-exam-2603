@@ -2,6 +2,7 @@ import { css } from "@emotion/react";
 import { useQuery } from "@tanstack/react-query";
 import { Text } from "_tosslib/components";
 import { colors } from "_tosslib/constants/colors";
+import { Reservation } from "_tosslib/server/types";
 import { EQUIPMENT_LABELS } from "constants/equipment";
 import { HOUR_LABELS, TOTAL_MINUTES } from "constants/timeSlots";
 import { getRooms, getReservations } from "pages/remotes";
@@ -92,7 +93,8 @@ function RoomRow({ name, isFirst, children }: { name: string, isFirst: boolean, 
     );
 }
 
-function ReservationBar({ reservation, roomName, isActive, onToggle }: { reservation: { id: string; roomId: string; date: string; start: string; end: string; attendees: number; equipment: string[] }, roomName: string, isActive: boolean, onToggle: () => void }) {
+function ReservationBar({ reservation, roomName, isActive, onToggle }:
+    { reservation: Reservation, roomName: string, isActive: boolean, onToggle: () => void }) {
     const left = (timeToMinutes(reservation.start) / TOTAL_MINUTES) * 100;
     const width = ((timeToMinutes(reservation.end) - timeToMinutes(reservation.start)) / TOTAL_MINUTES) * 100;
     return (

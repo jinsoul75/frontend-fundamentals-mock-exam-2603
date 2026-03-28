@@ -41,7 +41,15 @@ export function RoomBookingPage() {
 
   const { params, setParams } = useBookingSearchParams({ onFilterChange: resetSelection });
   const { date, startTime, endTime, attendees, equipment, preferredFloor } = params;
-  const { createReservationMutation } = useCreateReservation();
+  const { createReservationMutation } = useCreateReservation({
+    onSuccess: () => {
+      navigate('/', { state: { message: '예약이 완료되었습니다!' } });
+    },
+    onError: (message) => {
+      setErrorMessage(message);
+      setSelectedRoomId(null);
+    },
+  });
 
   const { data: rooms = [] } = useQuery({ queryKey: ['rooms'], queryFn: getRooms });
   const { data: reservations = [] } = useQuery({ queryKey: ['reservations', date], queryFn: () => getReservations(date), enabled: !!date });
@@ -210,7 +218,7 @@ export function RoomBookingPage() {
 
             const { roomId, startTime: start, endTime: end } = submitResult.data;
 
-            createReservationMutation.mutateAsync({
+            createReservationMutation.mutate({
               roomId,
               date,
               start,
@@ -218,24 +226,6 @@ export function RoomBookingPage() {
               attendees,
               equipment,
             })
-              .then((result) => {
-                if ('ok' in result && result.ok) {
-                  navigate('/', { state: { message: '예약이 완료되었습니다!' } });
-                  return;
-                }
-                const errResult = result;
-                setErrorMessage(errResult.message ?? '예약에 실패했습니다.');
-                setSelectedRoomId(null);
-              })
-              .catch((err: unknown) => {
-                let serverMessage = '예약에 실패했습니다.';
-                if (axios.isAxiosError(err)) {
-                  const data = err.response?.data as { message?: string } | undefined;
-                  serverMessage = data?.message ?? serverMessage;
-                }
-                setErrorMessage(serverMessage);
-                setSelectedRoomId(null);
-              });
           }}
             disabled={createReservationMutation.isPending}>
             {createReservationMutation.isPending ? '예약 중...' : '확정'}

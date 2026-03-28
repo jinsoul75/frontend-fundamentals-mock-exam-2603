@@ -1,3 +1,4 @@
+import { Equipment } from '_tosslib/server/types';
 import { parseAsInteger, useQueryStates, parseAsString, parseAsArrayOf } from 'nuqs';
 import { getTodayDateString } from 'utils/date';
 
@@ -19,5 +20,5 @@ export function useBookingSearchParams({ onFilterChange }: { onFilterChange: () 
     return setRawParams(updates);
   };
 
-  return { params: { date, startTime, endTime, attendees, equipment, preferredFloor }, setParams };
+  return { params: { date, startTime, endTime, attendees, equipment: equipment as unknown as Equipment[], preferredFloor }, setParams };
 };
