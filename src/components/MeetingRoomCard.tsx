@@ -1,15 +1,16 @@
 import { css } from "@emotion/react";
 import { ListRow, Text } from "_tosslib/components";
 import { colors } from "_tosslib/constants/colors";
+import { Room } from "_tosslib/server/types";
 import { EQUIPMENT_LABELS } from "constants/equipment";
 
-export function MeetingRoomCard({ floor, capacity, equipment, name, isSelected, onSelect }: { floor: number; capacity: number; equipment: string[]; name: string; isSelected: boolean; onSelect: () => void }) {
-    return (
+export function MeetingRoomCard({ room, isSelected, onSelect }: { room: Room; isSelected: boolean; onSelect: () => void }) {
+    return (    
         <div
             onClick={onSelect}
             role="button"
             aria-pressed={isSelected}
-            aria-label={name}
+            aria-label={room.name}
             css={css`
         cursor: pointer; padding: 14px 16px; border-radius: 14px;
         border: 2px solid ${isSelected ? colors.blue500 : colors.grey200};
@@ -21,9 +22,9 @@ export function MeetingRoomCard({ floor, capacity, equipment, name, isSelected, 
             <ListRow
                 contents={
                     <ListRow.Text2Rows
-                        top={name}
+                        top={room.name}
                         topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
-                        bottom={`${floor}층 · ${capacity}명 · ${equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ')}`}
+                        bottom={`${room.floor}층 · ${room.capacity}명 · ${room.equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ')}`}
                         bottomProps={{ typography: 't7', color: colors.grey600 }}
                     />
                 }

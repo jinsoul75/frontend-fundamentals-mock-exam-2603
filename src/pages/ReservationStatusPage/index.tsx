@@ -4,7 +4,7 @@ import { Top, Spacing, Border, Text, Button } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getTodayDateString } from 'utils/date';
 import { DateInput } from '../../components/DateInput';
-import { MyReservationCard } from '../../components/MyReservationList';
+import { MyReservationList } from '../../components/MyReservationList';
 import { ReservationTimeline } from '../../components/ReservationTimeline';
 import { MessageBanner } from '../../components/MessageBanner';
 import { Section } from 'components/Section';
@@ -12,8 +12,7 @@ import { useCancelReservation } from './hooks/useCancelReservation';
 import { useLocationStateMessage } from './hooks/useLocationStateMessage';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getMyReservations, getRooms } from 'pages/remotes';
-import { getRoomName } from './utils/getRoomName';
+import { getMyReservations } from 'pages/remotes';
 import { PageLayout } from 'pages/PageLayout';
 import { Flex } from 'components/Flex';
 import { EmptyState } from 'components/EmptyState';
@@ -24,7 +23,6 @@ export function ReservationStatusPage() {
   const [date, setDate] = useState(getTodayDateString());
 
   const { data: myReservations = [] } = useQuery({ queryKey: ['myReservations'], queryFn: getMyReservations });
-  const { data: rooms = [] } = useQuery({ queryKey: ['rooms'], queryFn: getRooms });
 
   const { message, setMessage } = useLocationStateMessage();
 
@@ -90,18 +88,9 @@ export function ReservationStatusPage() {
           <EmptyState message="예약 내역이 없습니다." />
         ) : (
           <Flex direction="column" gap={10}>
-            {myReservations.map((reservation) => (
-              <MyReservationCard
-                key={reservation.id}
-                roomName={getRoomName(rooms, reservation.roomId)}
-                date={reservation.date}
-                startTime={reservation.start}
-                endTime={reservation.end}
-                attendees={reservation.attendees}
-                equipment={reservation.equipment}
-                onCancel={() => confirmAndCancel(reservation.id)}
-              />
-            ))}
+            <MyReservationList
+              onCancel={confirmAndCancel}
+            />
           </Flex>
         )}
       </Section>

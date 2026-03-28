@@ -16,7 +16,6 @@ import { bookingSubmitSchema, validateBookingCondition } from './schemas/booking
 import { DateInput } from '../../components/DateInput';
 import { Section } from 'components/Section';
 import { useBookingSearchParams } from './hooks/useBookingSearchParams';
-import { Reservation, Room } from '_tosslib/server/types';
 import { getAvailableRooms, getFloors } from './utils/getAvailableRooms';
 import { useCreateReservation } from './hooks/useCreateReservation';
 import { NumberInput } from '../../components/NumberInput';
@@ -51,7 +50,7 @@ export function RoomBookingPage() {
   const { isComplete: isFilterComplete, validationError } = validateBookingCondition({ startTime, endTime, attendees });
 
   const availableRooms = isFilterComplete
-    ? getAvailableRooms(rooms as Room[], reservations as Reservation[], { date, startTime, endTime, attendees, equipment, preferredFloor }) : [];
+    ? getAvailableRooms(rooms, reservations, { ...params }) : [];
 
   return (
     <PageLayout>
@@ -127,7 +126,7 @@ export function RoomBookingPage() {
             <Text as="label" typography="t7" fontWeight="medium" color={colors.grey600}>선호 층</Text>
             <FloorSelect
               value={preferredFloor}
-              floors={getFloors(rooms as Room[])}
+              floors={getFloors(rooms)}
               onChange={value => setParams({ floor: value })}
               label="선호 층"
             />
@@ -187,12 +186,10 @@ export function RoomBookingPage() {
                 return (
                   <MeetingRoomCard
                     key={room.id}
-                    floor={room.floor}
-                    capacity={room.capacity}
-                    equipment={room.equipment}
-                    name={room.name}
+                    room={room}
                     isSelected={isSelected}
-                    onSelect={() => setSelectedRoomId(room.id)} />
+                    onSelect={() => setSelectedRoomId(room.id)}
+                  />
                 );
               })}
             </Flex>
