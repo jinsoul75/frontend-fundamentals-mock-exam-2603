@@ -3,19 +3,13 @@ import { useState } from 'react';
 import { Top, Spacing, Border, Text, Button } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getTodayDateString } from 'utils/date';
-import { DateInput } from '../../components/DateInput';
-import { MyReservationList } from '../../components/MyReservationList';
-import { ReservationTimeline } from '../../components/ReservationTimeline';
-import { MessageBanner } from '../../components/MessageBanner';
-import { Section } from 'components/Section';
+import { DateInput, MyReservationList, ReservationTimeline, MessageBanner, Section, Flex, EmptyState } from 'components';
 import { useCancelReservation } from './hooks/useCancelReservation';
 import { useLocationStateMessage } from './hooks/useLocationStateMessage';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMyReservations } from 'pages/remotes';
 import { PageLayout } from 'pages/PageLayout';
-import { Flex } from 'components/Flex';
-import { EmptyState } from 'components/EmptyState';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();

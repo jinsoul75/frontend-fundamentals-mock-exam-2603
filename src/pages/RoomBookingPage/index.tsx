@@ -5,27 +5,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Top, Spacing, Border, Button, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
 import { getRooms, getReservations } from 'pages/remotes';
-import axios from 'axios';
 import { EQUIPMENT_LABELS, ALL_EQUIPMENT } from 'constants/equipment';
 import { TIME_SLOTS } from 'constants/timeSlots';
 import { getTodayDateString } from 'utils/date';
-import { ErrorMessage } from '../../components/ErrorMessage';
-import { MeetingRoomCard } from '../../components/MeetingRoomCard';
-import { ValidationError } from '../../components/ValidationError';
+import { ErrorMessage, MeetingRoomCard, ValidationError, DateInput, Section, NumberInput, TimeSelect, FloorSelect, MultiSelectButton, TextLink, Flex, EmptyState } from 'components';
 import { bookingSubmitSchema, validateBookingCondition } from './schemas/bookingSchema';
-import { DateInput } from '../../components/DateInput';
-import { Section } from 'components/Section';
 import { useBookingSearchParams } from './hooks/useBookingSearchParams';
 import { getAvailableRooms, getFloors } from './utils/getAvailableRooms';
 import { useCreateReservation } from './hooks/useCreateReservation';
-import { NumberInput } from '../../components/NumberInput';
-import { TimeSelect } from '../../components/TimeSelect';
-import { FloorSelect } from '../../components/FloorSelect';
-import { MultiSelectButton } from '../../components/MultiSelectButton';
 import { PageLayout } from 'pages/PageLayout';
-import { TextLink } from 'components/TextLink';
-import { Flex } from 'components/Flex';
-import { EmptyState } from 'components/EmptyState';
 
 export function RoomBookingPage() {
   const navigate = useNavigate();
