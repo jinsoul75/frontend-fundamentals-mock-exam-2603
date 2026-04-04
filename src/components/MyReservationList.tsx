@@ -5,7 +5,7 @@ import { colors } from "_tosslib/constants/colors";
 import { Button, ListRow, Text } from "_tosslib/components";
 import { EQUIPMENT_LABELS } from "constants/equipment";
 import { getRoomName } from "pages/ReservationStatusPage/utils/getRoomName";
-
+import { Equipment } from "_tosslib/server/types";
 
 export function MyReservationList({ onCancel }: { onCancel: (reservationId: string) => void }) {
   const { data: rooms = [] } = useQuery({ queryKey: ['rooms'], queryFn: getRooms });
@@ -21,7 +21,7 @@ export function MyReservationList({ onCancel }: { onCancel: (reservationId: stri
           <ListRow.Text2Rows
             top={getRoomName(rooms, reservation.roomId)}
             topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
-            bottom={`${reservation.date} ${reservation.start}~${reservation.end} · ${reservation.attendees}명 · ${reservation.equipment.map((e: string) => EQUIPMENT_LABELS[e]).join(', ') || '장비 없음'}`}
+            bottom={`${reservation.date} ${reservation.start}~${reservation.end} · ${reservation.attendees}명 · ${reservation.equipment.map((e: string) => EQUIPMENT_LABELS[e as Equipment] ).join(', ') || '장비 없음'}`}
             bottomProps={{ typography: 't7', color: colors.grey600 }}
           />
         }
